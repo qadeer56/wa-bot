@@ -1,11 +1,17 @@
 {
   "$schema": "https://schema.railpack.com",
-  "buildAptPackages": [
-    "libcairo2-dev",
-    "libpango1.0-dev",
-    "libjpeg-dev",
-    "libgif-dev",
-    "librsvg2-dev",
-    "pkg-config"
-  ]
+  "packages": {
+    "apt": [
+      "chromium",
+      "libcairo2",
+      "libpango-1.0-0",
+      "libpangocairo-1.0-0",
+      "libgdk-pixbuf2.0-0",
+      "libshared-mime-info",
+      "shared-mime-info",
+      "libglib2.0-0",
+      "fontconfig",
+      "libfontconfig1"
+    ]
+  }
 }
