@@ -1,7 +1,9 @@
 {
   "$schema": "https://schema.railpack.com",
-  "packages": {
-    "apt": [
+
+  "deploy": {
+    "aptPackages": [
+      "...",
       "chromium",
       "libcairo2",
       "libpango-1.0-0",
