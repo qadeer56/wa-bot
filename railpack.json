@@ -1,11 +1,11 @@
 {
-  "$schema": "https://railway.com/railpack-schema.json",
+  "$schema": "https://railpack.json",
   "packages": {
     "node": "20"
   },
   "apt": [
     "chromium",
-    "chromium-sandbox",
+    "chromium-browser",
     "fonts-liberation",
     "libasound2",
     "libatk-bridge2.0-0",
@@ -40,9 +40,6 @@
     "libxtst6",
     "lsb-release",
     "wget",
-    "xdg-utils",
-    "pixman",
-    "cairo",
-    "pango"
+    "xdg-utils"
   ]
 }
