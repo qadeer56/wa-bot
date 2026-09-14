@@ -14,7 +14,7 @@ const commands = loadCommands();
 // Country code ke sath, + ke baghair
 // ==================================================
 
-const PHONE_NUMBER = '923157271744';
+const PHONE_NUMBER = '923490563735';
 
 // ==================================================
 // WhatsApp Client
