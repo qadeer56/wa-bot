@@ -1,4 +1,5 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
 const puppeteer = require('puppeteer');
 
 const { OWNER_NUMBER, PREFIX } = require('./config');
@@ -23,22 +24,9 @@ const client = new Client({
   },
 });
 
-let pairingRequested = false;
-
-client.on('qr', async () => {
-  if (pairingRequested) return;
-  pairingRequested = true;
-
-  const phoneNumber = OWNER_NUMBER.replace('@c.us', '');
-  try {
-    const code = await client.requestPairingCode(phoneNumber);
-    console.log('=================================');
-    console.log('🔑 TUMHARA PAIRING CODE: ' + code);
-    console.log('=================================');
-    console.log('WhatsApp > Linked Devices > Link a Device > Link with phone number > ye code daalo');
-  } catch (err) {
-    console.error('Pairing code error:', err.message);
-  }
+client.on('qr', (qr) => {
+  console.log('📱 QR code scan karo apne WhatsApp se (Linked Devices):');
+  qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', () => {
