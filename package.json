@@ -4,7 +4,8 @@
   "description": "Custom WhatsApp bot - group + personal DM, AI persona chat, commands, cards, weather",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "npx puppeteer browsers install chrome"
   },
   "dependencies": {
     "whatsapp-web.js": "^1.23.0",
