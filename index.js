@@ -29,6 +29,8 @@ client.on('qr', async () => {
   if (pairingRequested) return;
   pairingRequested = true;
 
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
   const phoneNumber = OWNER_NUMBER.replace('@c.us', '');
   try {
     const code = await client.requestPairingCode(phoneNumber);
@@ -36,8 +38,9 @@ client.on('qr', async () => {
     console.log('🔑 TUMHARA PAIRING CODE: ' + code);
     console.log('=================================');
     console.log('WhatsApp > Linked Devices > Link a Device > Link with phone number > ye code daalo');
+    console.log('⏱️ Code sirf ~60 second valid hai - JALDI enter karo!');
   } catch (err) {
-    console.error('Pairing code error:', err.message);
+    console.error('Pairing code error (full):', JSON.stringify(err, Object.getOwnPropertyNames(err)));
   }
 });
 
