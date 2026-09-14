@@ -1,61 +1,36 @@
+require('dotenv').config();
+const config = require('./config');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const puppeteer = require('puppeteer');
 const http = require('http');
 const QRCode = require('qrcode');
 
-// ==========================================
-// SETTINGS
-// ==========================================
-
 const PORT = process.env.PORT || 8080;
-
-// QR storage
 let qrImage = null;
 let botReady = false;
 
 // ==========================================
-// QR WEB SERVER
+// WEB SERVER (For QR Display)
 // ==========================================
-
 const server = http.createServer((req, res) => {
-
   if (req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
 
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8'
-    });
-
-    // Bot connected
     if (botReady) {
-
       res.end(`
         <!DOCTYPE html>
         <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>WhatsApp Bot</title>
-        </head>
-
-        <body style="
-          font-family: Arial;
-          text-align: center;
-          padding: 40px;
-        ">
-
-          <h1>✅ WhatsApp Bot Online</h1>
-
+        <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>${config.BOT_NAME}</title></head>
+        <body style="font-family: Arial; text-align: center; padding: 40px;">
+          <h1>✅ ${config.BOT_NAME} Online</h1>
           <p>Bot successfully connected.</p>
-
         </body>
         </html>
       `);
-
       return;
     }
 
-    // QR not ready yet
     if (!qrImage) {
-
       res.end(`
         <!DOCTYPE html>
         <html>
@@ -64,96 +39,51 @@ const server = http.createServer((req, res) => {
           <meta http-equiv="refresh" content="3">
           <title>WhatsApp QR</title>
         </head>
-
-        <body style="
-          font-family: Arial;
-          text-align: center;
-          padding: 40px;
-        ">
-
+        <body style="font-family: Arial; text-align: center; padding: 40px;">
           <h2>⏳ QR Code Loading...</h2>
-
           <p>Please wait...</p>
-
         </body>
         </html>
       `);
-
       return;
     }
 
-    // Show QR
     res.end(`
       <!DOCTYPE html>
       <html>
-
-      <head>
-        <meta name="viewport"
-              content="width=device-width, initial-scale=1">
-
-        <title>WhatsApp QR Code</title>
-      </head>
-
-      <body style="
-        font-family: Arial;
-        text-align: center;
-        padding: 20px;
-      ">
-
+      <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>WhatsApp QR Code</title></head>
+      <body style="font-family: Arial; text-align: center; padding: 20px;">
         <h2>📱 Scan QR Code</h2>
-
-        <p>
-          WhatsApp → Linked Devices → Link a device
-        </p>
-
-        <img
-          src="${qrImage}"
-          style="
-            width: 320px;
-            max-width: 90vw;
-          "
-        >
-
-        <p>
-          QR expire ho jaye to page refresh karo.
-        </p>
-
+        <p>WhatsApp → Linked Devices → Link a device</p>
+        <img src="${qrImage}" style="width: 320px; max-width: 90vw;">
+        <p>QR expire ho jaye to page refresh karo.</p>
       </body>
-
       </html>
     `);
-
     return;
   }
 
   res.writeHead(404);
   res.end('Not Found');
-
 });
 
-// Start web server
 server.listen(PORT, () => {
-
   console.log(`🌐 Web server running on port ${PORT}`);
-
 });
 
 // ==========================================
-// WHATSAPP CLIENT
+// WHATSAPP CLIENT CONFIGURATION
 // ==========================================
-
 const client = new Client({
-
   authStrategy: new LocalAuth(),
-
+  // Fixes WhatsApp Web crash & message handling errors
+  webVersionCache: {
+    type: 'remote',
+    remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+  },
   puppeteer: {
-
     headless: true,
-
-    executablePath:
-      process.env.PUPPETEER_EXECUTABLE_PATH ||
-      puppeteer.executablePath(),
-
+    executablePath: config.PUPPETEER_EXECUTABLE_PATH || process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -163,217 +93,92 @@ const client = new Client({
       '--no-zygote',
       '--disable-extensions'
     ]
-
   }
-
 });
-
-// ==========================================
-// QR EVENT
-// ==========================================
 
 client.on('qr', async (qr) => {
-
   try {
-
-    qrImage = await QRCode.toDataURL(qr, {
-      width: 500,
-      margin: 2
-    });
-
-    console.log('');
-    console.log('================================');
-    console.log('📱 QR CODE READY');
-    console.log('================================');
-    console.log('Open Railway URL and scan QR.');
-    console.log('================================');
-    console.log('');
-
+    qrImage = await QRCode.toDataURL(qr, { width: 500, margin: 2 });
+    console.log('\n================================\n📱 QR CODE READY\n================================\nOpen Railway URL and scan QR.\n================================\n');
   } catch (error) {
-
-    console.error(
-      '❌ QR generation error:',
-      error
-    );
-
+    console.error('❌ QR generation error:', error);
   }
-
 });
-
-// ==========================================
-// AUTHENTICATED
-// ==========================================
 
 client.on('authenticated', () => {
-
   console.log('🔐 WhatsApp authentication successful.');
-
 });
-
-// ==========================================
-// READY
-// ==========================================
 
 client.on('ready', () => {
-
   botReady = true;
   qrImage = null;
-
-  console.log('');
-  console.log('================================');
-  console.log('✅ BOT READY');
-  console.log('================================');
-  console.log('WhatsApp successfully connected.');
-  console.log('================================');
-  console.log('');
-
+  console.log(`\n================================\n✅ ${config.BOT_NAME} IS READY\n================================\nWhatsApp successfully connected.\n================================\n`);
 });
-
-// ==========================================
-// AUTH FAILURE
-// ==========================================
 
 client.on('auth_failure', (error) => {
-
-  console.error(
-    '❌ Authentication failed:',
-    error
-  );
-
+  console.error('❌ Authentication failed:', error);
 });
-
-// ==========================================
-// DISCONNECTED
-// ==========================================
 
 client.on('disconnected', (reason) => {
-
   botReady = false;
-
-  console.log(
-    '⚠️ WhatsApp disconnected:',
-    reason
-  );
-
+  console.log('⚠️ WhatsApp disconnected:', reason);
 });
 
 // ==========================================
-// MESSAGE CREATE (Captures Direct, Group & Self Messages)
+// MESSAGE EVENT (Group, Direct & Self Messages)
 // ==========================================
-
 client.on('message_create', async (msg) => {
-
   try {
+    const text = (msg.body || '').trim().toLowerCase();
+    const prefix = config.PREFIX || '.';
 
-    const text = (msg.body || '')
-      .trim()
-      .toLowerCase();
-
-    // Console log for debugging
     if (text) {
       console.log(`📩 [MESSAGE]: ${msg.body} | From: ${msg.from}`);
     }
 
-    // ========================================
-    // COMMANDS (.menu, .owner, .help, etc.)
-    // ========================================
-
-    if (text === '.menu' || text === '.help') {
-
+    // COMMANDS
+    if (text === `${prefix}menu` || text === `${prefix}help`) {
       await msg.reply(
-        '📜 *BOT MENU*\n\n' +
-        '1. .ping - Check Bot Status\n' +
-        '2. .owner - Bot Owner Info\n' +
-        '3. hello - Greetings'
+        `📜 *${config.BOT_NAME} MENU*\n\n` +
+        `1. ${prefix}ping - Check Status\n` +
+        `2. ${prefix}owner - Owner Info\n` +
+        `3. hello - Greetings`
       );
-
       console.log('✅ Menu reply sent.');
-
       return;
     }
 
-    if (text === '.owner') {
-
-      await msg.reply(
-        '👑 *Bot Owner:* Qadeer Khan'
-      );
-
+    if (text === `${prefix}owner`) {
+      await msg.reply(`👑 *Bot Owner:* ${config.OWNER_NAME}`);
       console.log('✅ Owner reply sent.');
-
       return;
     }
 
-    // ========================================
-    // GENERAL KEYWORDS
-    // ========================================
-
-    if (
-      text === 'hello' ||
-      text === 'hi' ||
-      text === 'hey' ||
-      text === '.hi'
-    ) {
-
-      await msg.reply(
-        '👋 Hello! Main tumhara WhatsApp bot hoon.'
-      );
-
+    if (text === 'hello' || text === 'hi' || text === 'hey' || text === `${prefix}hi`) {
+      await msg.reply(`👋 Hello! Main ${config.BOT_NAME} hoon.`);
       console.log('✅ Reply sent.');
-
       return;
     }
 
     if (text === 'bot') {
-
-      await msg.reply(
-        '🤖 Haan bhai, main online hoon!'
-      );
-
+      await msg.reply('🤖 Haan bhai, main online hoon!');
       console.log('✅ Reply sent.');
-
       return;
     }
 
-    if (text === 'ping' || text === '.ping') {
-
-      await msg.reply(
-        '🏓 Pong!'
-      );
-
+    if (text === 'ping' || text === `${prefix}ping`) {
+      await msg.reply('🏓 Pong!');
       console.log('✅ Reply sent.');
-
       return;
     }
 
   } catch (error) {
-
-    console.error(
-      '❌ Message error:',
-      error
-    );
-
+    console.error('❌ Message handling error:', error);
   }
-
 });
 
-// ==========================================
-// START BOT
-// ==========================================
-
-console.log('');
-console.log('================================');
-console.log('🚀 STARTING WHATSAPP BOT');
-console.log('================================');
-console.log('⏳ Starting WhatsApp Web...');
-console.log('');
+console.log(`\n================================\n🚀 STARTING ${config.BOT_NAME}\n================================\n⏳ Starting WhatsApp Web...\n`);
 
 client.initialize().catch((error) => {
-
-  console.error('');
-  console.error(
-    '❌ WhatsApp initialization failed:'
-  );
-
-  console.error(error);
-
+  console.error('\n❌ WhatsApp initialization failed:', error);
 });
