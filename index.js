@@ -10,13 +10,18 @@ const { getAIReply } = require('./ai/persona');
 
 const commands = loadCommands();
 
-// Railway/server pe Chromium ka path khud dhoondo (nix package 'which chromium' se milta hai)
+// Railway/server pe Chromium ka path khud dhoondo (naam system ke hisab se alag ho sakta hai)
 function resolveChromiumPath() {
-  try {
-    return execSync('which chromium').toString().trim();
-  } catch (err) {
-    return undefined; // local phone/PC pe undefined rahega, Puppeteer apna khud ka Chromium use karega
+  const candidates = ['chromium', 'chromium-browser', 'google-chrome-stable', 'google-chrome'];
+  for (const name of candidates) {
+    try {
+      const path = execSync(`which ${name}`).toString().trim();
+      if (path) return path;
+    } catch (err) {
+      // agla naam try karo
+    }
   }
+  return undefined; // local phone/PC pe undefined rahega, Puppeteer apna khud ka Chromium use karega
 }
 
 const client = new Client({
@@ -46,14 +51,13 @@ client.on('message', async (msg) => {
   try {
     const chat = await msg.getChat();
     const body = msg.body?.trim() || '';
-    const senderId = msg.author || msg.from; // group mein author, DM mein from
+    const senderId = msg.author || msg.from;
 
-    // ---- 1. Command handling (chahe group ho ya personal DM) ----
     if (body.startsWith(PREFIX)) {
       const [cmdName, ...args] = body.slice(PREFIX.length).trim().split(/\s+/);
       const command = commands.get(cmdName.toLowerCase());
 
-      if (!command) return; // unknown command - chup raho
+      if (!command) return;
 
       if (command.ownerOnly && senderId !== OWNER_NUMBER) {
         return msg.reply('❌ Ye command sirf owner use kar sakta hai.');
@@ -62,12 +66,10 @@ client.on('message', async (msg) => {
       return command.execute(msg, args, chat, client, commands);
     }
 
-    // ---- 2. Salam/greeting - autochat off ho tab bhi reply ----
     if (isGreeting(body)) {
       return msg.reply(getGreetingReply());
     }
 
-    // ---- 3. Autochat ON hai to AI se normal baat-cheet (group + DM dono) ----
     if (isAutochatOn(chat.id._serialized) && body.length > 0) {
       const reply = await getAIReply(chat.id._serialized, body);
       return msg.reply(reply);
