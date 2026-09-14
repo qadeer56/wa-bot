@@ -3,28 +3,21 @@ const puppeteer = require('puppeteer');
 const http = require('http');
 const QRCode = require('qrcode');
 
-const { OWNER_NUMBER, PREFIX } = require('./config');
-const { loadCommands } = require('./utils/commandLoader');
-const { isGreeting, getGreetingReply } = require('./utils/greeting');
-const { isAutochatOn } = require('./utils/state');
-const { getAIReply } = require('./ai/persona');
+// ==========================================
+// SETTINGS
+// ==========================================
 
-const commands = loadCommands();
+const PORT = process.env.PORT || 8080;
 
-// ==================================================
-// QR STORAGE
-// ==================================================
-
+// QR storage
 let qrImage = null;
 let botReady = false;
 
-// ==================================================
+// ==========================================
 // QR WEB SERVER
-// ==================================================
+// ==========================================
 
-const PORT = process.env.PORT || 3000;
-
-const server = http.createServer(async (req, res) => {
+const server = http.createServer((req, res) => {
 
   if (req.url === '/') {
 
@@ -32,7 +25,9 @@ const server = http.createServer(async (req, res) => {
       'Content-Type': 'text/html; charset=utf-8'
     });
 
+    // Bot connected
     if (botReady) {
+
       res.end(`
         <!DOCTYPE html>
         <html>
@@ -40,9 +35,17 @@ const server = http.createServer(async (req, res) => {
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>WhatsApp Bot</title>
         </head>
-        <body style="text-align:center;font-family:Arial;padding:30px;">
-          <h1>✅ WhatsApp Bot Connected</h1>
-          <p>Bot already linked successfully.</p>
+
+        <body style="
+          font-family: Arial;
+          text-align: center;
+          padding: 40px;
+        ">
+
+          <h1>✅ WhatsApp Bot Online</h1>
+
+          <p>Bot successfully connected.</p>
+
         </body>
         </html>
       `);
@@ -50,7 +53,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // QR not ready yet
     if (!qrImage) {
+
       res.end(`
         <!DOCTYPE html>
         <html>
@@ -59,9 +64,17 @@ const server = http.createServer(async (req, res) => {
           <meta http-equiv="refresh" content="3">
           <title>WhatsApp QR</title>
         </head>
-        <body style="text-align:center;font-family:Arial;padding:30px;">
+
+        <body style="
+          font-family: Arial;
+          text-align: center;
+          padding: 40px;
+        ">
+
           <h2>⏳ QR Code Loading...</h2>
-          <p>Page automatically refresh hogi.</p>
+
+          <p>Please wait...</p>
+
         </body>
         </html>
       `);
@@ -69,46 +82,44 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // Show QR
     res.end(`
       <!DOCTYPE html>
       <html>
+
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1">
+
         <title>WhatsApp QR Code</title>
       </head>
 
       <body style="
-        text-align:center;
-        font-family:Arial;
-        background:#ffffff;
-        padding:20px;
+        font-family: Arial;
+        text-align: center;
+        padding: 20px;
       ">
 
-        <h2>📱 WhatsApp QR Code</h2>
+        <h2>📱 Scan QR Code</h2>
 
         <p>
-          Apne main phone ke WhatsApp se is QR ko scan karo.
+          WhatsApp → Linked Devices → Link a device
         </p>
 
         <img
           src="${qrImage}"
           style="
-            width:320px;
-            max-width:90vw;
-            height:auto;
-            image-rendering:pixelated;
+            width: 320px;
+            max-width: 90vw;
           "
         >
-
-        <p style="margin-top:20px;">
-          WhatsApp → Settings → Linked Devices → Link a device
-        </p>
 
         <p>
           QR expire ho jaye to page refresh karo.
         </p>
 
       </body>
+
       </html>
     `);
 
@@ -117,30 +128,26 @@ const server = http.createServer(async (req, res) => {
 
   res.writeHead(404);
   res.end('Not Found');
+
 });
 
+// Start web server
 server.listen(PORT, () => {
-  console.log(`🌐 QR server running on port ${PORT}`);
 
-  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-    console.log(
-      `🔗 QR OPEN KARNE KA LINK: https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-    );
-  } else {
-    console.log(
-      '⚠️ Railway Public Domain abhi set nahi hai.'
-    );
-  }
+  console.log(`🌐 Web server running on port ${PORT}`);
+
 });
 
-// ==================================================
+// ==========================================
 // WHATSAPP CLIENT
-// ==================================================
+// ==========================================
 
 const client = new Client({
+
   authStrategy: new LocalAuth(),
 
   puppeteer: {
+
     headless: true,
 
     executablePath:
@@ -156,12 +163,14 @@ const client = new Client({
       '--no-zygote',
       '--disable-extensions'
     ]
+
   }
+
 });
 
-// ==================================================
+// ==========================================
 // QR EVENT
-// ==================================================
+// ==========================================
 
 client.on('qr', async (qr) => {
 
@@ -173,35 +182,37 @@ client.on('qr', async (qr) => {
     });
 
     console.log('');
-    console.log('========================================');
-    console.log('       📱 QR CODE READY');
-    console.log('========================================');
-
-    if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-      console.log(
-        `🔗 https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-      );
-    }
-
-    console.log('========================================');
+    console.log('================================');
+    console.log('📱 QR CODE READY');
+    console.log('================================');
+    console.log('Open Railway URL and scan QR.');
+    console.log('================================');
     console.log('');
 
   } catch (error) {
-    console.error('❌ QR generation error:', error);
+
+    console.error(
+      '❌ QR generation error:',
+      error
+    );
+
   }
+
 });
 
-// ==================================================
+// ==========================================
 // AUTHENTICATED
-// ==================================================
+// ==========================================
 
 client.on('authenticated', () => {
+
   console.log('🔐 WhatsApp authentication successful.');
+
 });
 
-// ==================================================
+// ==========================================
 // READY
-// ==================================================
+// ==========================================
 
 client.on('ready', () => {
 
@@ -209,146 +220,138 @@ client.on('ready', () => {
   qrImage = null;
 
   console.log('');
-  console.log('========================================');
-  console.log('       ✅ BOT READY');
-  console.log('========================================');
-  console.log('WhatsApp successfully connected!');
+  console.log('================================');
+  console.log('✅ BOT READY');
+  console.log('================================');
+  console.log('WhatsApp successfully connected.');
+  console.log('================================');
   console.log('');
+
 });
 
-// ==================================================
+// ==========================================
 // AUTH FAILURE
-// ==================================================
+// ==========================================
 
-client.on('auth_failure', (msg) => {
-  console.error('❌ WhatsApp authentication failed:', msg);
+client.on('auth_failure', (error) => {
+
+  console.error(
+    '❌ Authentication failed:',
+    error
+  );
+
 });
 
-// ==================================================
+// ==========================================
 // DISCONNECTED
-// ==================================================
+// ==========================================
 
 client.on('disconnected', (reason) => {
-  console.log('⚠️ WhatsApp disconnected:', reason);
 
   botReady = false;
-});
 
-// ==================================================
-// LOADING
-// ==================================================
-
-client.on('loading_screen', (percent, message) => {
   console.log(
-    `⏳ WhatsApp loading: ${percent}% - ${message}`
+    '⚠️ WhatsApp disconnected:',
+    reason
   );
+
 });
 
-// ==================================================
-// MESSAGE HANDLER
-// ==================================================
+// ==========================================
+// MESSAGE
+// ==========================================
 
 client.on('message', async (msg) => {
 
   try {
 
-    const chat = await msg.getChat();
+    console.log('');
+    console.log('📩 MESSAGE RECEIVED');
+    console.log('From:', msg.from);
+    console.log('Message:', msg.body);
 
-    const body = msg.body?.trim() || '';
+    const text = (msg.body || '')
+      .trim()
+      .toLowerCase();
 
-    const senderId = msg.author || msg.from;
-
-    // ==================================================
-    // COMMANDS
-    // ==================================================
-
-    if (body.startsWith(PREFIX)) {
-
-      const [cmdName, ...args] = body
-        .slice(PREFIX.length)
-        .trim()
-        .split(/\s+/);
-
-      const command = commands.get(
-        cmdName.toLowerCase()
-      );
-
-      if (!command) return;
-
-      if (
-        command.ownerOnly &&
-        senderId !== OWNER_NUMBER
-      ) {
-        return msg.reply(
-          '❌ Ye command sirf owner use kar sakta hai.'
-        );
-      }
-
-      return command.execute(
-        msg,
-        args,
-        chat,
-        client,
-        commands
-      );
-    }
-
-    // ==================================================
-    // GREETING
-    // ==================================================
-
-    if (isGreeting(body)) {
-      return msg.reply(
-        getGreetingReply()
-      );
-    }
-
-    // ==================================================
-    // AI AUTOCHAT
-    // ==================================================
+    // ========================================
+    // HELLO
+    // ========================================
 
     if (
-      isAutochatOn(chat.id._serialized) &&
-      body.length > 0
+      text === 'hello' ||
+      text === 'hi' ||
+      text === 'hey'
     ) {
 
-      const reply = await getAIReply(
-        chat.id._serialized,
-        body
+      await msg.reply(
+        '👋 Hello! Main tumhara WhatsApp bot hoon.'
       );
 
-      return msg.reply(reply);
+      console.log('✅ Reply sent.');
+
+      return;
     }
 
-  } catch (err) {
+    // ========================================
+    // BOT
+    // ========================================
+
+    if (text === 'bot') {
+
+      await msg.reply(
+        '🤖 Haan bhai, main online hoon!'
+      );
+
+      console.log('✅ Reply sent.');
+
+      return;
+    }
+
+    // ========================================
+    // PING
+    // ========================================
+
+    if (text === 'ping') {
+
+      await msg.reply(
+        '🏓 Pong!'
+      );
+
+      console.log('✅ Reply sent.');
+
+      return;
+    }
+
+  } catch (error) {
 
     console.error(
-      '❌ Message handling error:',
-      err
+      '❌ Message error:',
+      error
     );
 
   }
 
 });
 
-// ==================================================
-// START
-// ==================================================
+// ==========================================
+// START BOT
+// ==========================================
 
 console.log('');
-console.log('========================================');
-console.log('       🚀 STARTING WHATSAPP BOT');
-console.log('========================================');
+console.log('================================');
+console.log('🚀 STARTING WHATSAPP BOT');
+console.log('================================');
 console.log('⏳ Starting WhatsApp Web...');
 console.log('');
 
-client.initialize().catch((err) => {
+client.initialize().catch((error) => {
 
   console.error('');
   console.error(
     '❌ WhatsApp initialization failed:'
   );
 
-  console.error(err);
+  console.error(error);
 
 });
