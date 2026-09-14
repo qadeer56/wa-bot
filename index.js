@@ -258,30 +258,60 @@ client.on('disconnected', (reason) => {
 });
 
 // ==========================================
-// MESSAGE
+// MESSAGE CREATE (Captures Direct, Group & Self Messages)
 // ==========================================
 
-client.on('message', async (msg) => {
+client.on('message_create', async (msg) => {
 
   try {
-
-    console.log('');
-    console.log('📩 MESSAGE RECEIVED');
-    console.log('From:', msg.from);
-    console.log('Message:', msg.body);
 
     const text = (msg.body || '')
       .trim()
       .toLowerCase();
 
+    // Console log for debugging
+    if (text) {
+      console.log(`📩 [MESSAGE]: ${msg.body} | From: ${msg.from}`);
+    }
+
     // ========================================
-    // HELLO
+    // COMMANDS (.menu, .owner, .help, etc.)
+    // ========================================
+
+    if (text === '.menu' || text === '.help') {
+
+      await msg.reply(
+        '📜 *BOT MENU*\n\n' +
+        '1. .ping - Check Bot Status\n' +
+        '2. .owner - Bot Owner Info\n' +
+        '3. hello - Greetings'
+      );
+
+      console.log('✅ Menu reply sent.');
+
+      return;
+    }
+
+    if (text === '.owner') {
+
+      await msg.reply(
+        '👑 *Bot Owner:* Qadeer Khan'
+      );
+
+      console.log('✅ Owner reply sent.');
+
+      return;
+    }
+
+    // ========================================
+    // GENERAL KEYWORDS
     // ========================================
 
     if (
       text === 'hello' ||
       text === 'hi' ||
-      text === 'hey'
+      text === 'hey' ||
+      text === '.hi'
     ) {
 
       await msg.reply(
@@ -292,10 +322,6 @@ client.on('message', async (msg) => {
 
       return;
     }
-
-    // ========================================
-    // BOT
-    // ========================================
 
     if (text === 'bot') {
 
@@ -308,11 +334,7 @@ client.on('message', async (msg) => {
       return;
     }
 
-    // ========================================
-    // PING
-    // ========================================
-
-    if (text === 'ping') {
+    if (text === 'ping' || text === '.ping') {
 
       await msg.reply(
         '🏓 Pong!'
