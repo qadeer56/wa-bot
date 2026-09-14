@@ -1,6 +1,6 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-const { execSync } = require('child_process');
+const puppeteer = require('puppeteer');
 
 const { OWNER_NUMBER, PREFIX } = require('./config');
 const { loadCommands } = require('./utils/commandLoader');
@@ -10,25 +10,11 @@ const { getAIReply } = require('./ai/persona');
 
 const commands = loadCommands();
 
-// Railway/server pe Chromium ka path khud dhoondo (naam system ke hisab se alag ho sakta hai)
-function resolveChromiumPath() {
-  const candidates = ['chromium', 'chromium-browser', 'google-chrome-stable', 'google-chrome'];
-  for (const name of candidates) {
-    try {
-      const path = execSync(`which ${name}`).toString().trim();
-      if (path) return path;
-    } catch (err) {
-      // agla naam try karo
-    }
-  }
-  return undefined; // local phone/PC pe undefined rahega, Puppeteer apna khud ka Chromium use karega
-}
-
 const client = new Client({
-  authStrategy: new LocalAuth(), // session save karega, dobara QR scan nahi karna padega
+  authStrategy: new LocalAuth(),
   puppeteer: {
     headless: true,
-    executablePath: resolveChromiumPath(),
+    executablePath: puppeteer.executablePath(),
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
